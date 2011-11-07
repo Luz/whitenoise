@@ -21,5 +21,5 @@ NEEDED PACKAGES
 ubuntu example: sudo apt-get install libsdl1.2-dev libsdl-image1.2-dev libboost-dev
 
 COMPILE
-./m
+make
 
