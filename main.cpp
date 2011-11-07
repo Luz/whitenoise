@@ -8,18 +8,26 @@
  
 using namespace std;
 
-int SCREEN_WIDTH = 2048;
-int SCREEN_HEIGHT = 2048;
-int FOLDER_NUMBER = 4;
-const int SCREEN_BPP = 24;
-
 int beenden=0; //Program flow
 
 unsigned int generateSeed();
 void catcher(int sigtype);
 
+void die(int retval)
+{
+	fprintf(stderr, "usage:\t./whitenoise");
+	fprintf(stderr, "\t./whitenoise amountoffolders");
+	fprintf(stderr, "\t./whitenoise amountoffolders width height");
+	exit(retval);
+}
+
 int main(int argc, char* args[])
 {
+	unsigned int surfaceWidth = 2048;
+	unsigned int surfaceHeight = 2048;
+	unsigned int folderNumber = 4;
+	const int SCREEN_BPP = 24;
+
 	SDL_Surface *surface = NULL;
 	unsigned int i,j,k;
 	char foldername[32];
@@ -30,62 +38,53 @@ int main(int argc, char* args[])
 	srand(generateSeed());
 
 	if((argc != 1) && (argc != 2) && (argc != 4))
-		{
-			printf("usage:\t./whitenoise");
-			printf("\t./whitenoise amountoffolders");
-			printf("\t./whitenoise amountoffolders width height");
-			return 1;
-		}
+	{
+		die(1);
+	}
 	if(argc == 2)
 	{
 		try
 		{
-			FOLDER_NUMBER = boost::lexical_cast<int>(args[1]);
+			folderNumber = boost::lexical_cast<int>(args[1]);
 		}
 		catch(boost::bad_lexical_cast&)
 		{
-			printf("Foldernumber parameter needs to be numeric!");
-			printf("usage:\t./whitenoise");
-			printf("\t./whitenoise amountoffolders");
-			printf("\t./whitenoise amountoffolders width height");
-			return 1;
+			fprintf(stderr, "Foldernumber parameter needs to be numeric!");
+			die(1);
 		}
 	}
 	if(argc == 4)
 	{
 		try
 		{
-			FOLDER_NUMBER = boost::lexical_cast<int>(args[1]);
-			SCREEN_WIDTH = boost::lexical_cast<int>(args[2]);
-			SCREEN_HEIGHT = boost::lexical_cast<int>(args[3]);
+			folderNumber = boost::lexical_cast<int>(args[1]);
+			surfaceWidth = boost::lexical_cast<int>(args[2]);
+			surfaceHeight = boost::lexical_cast<int>(args[3]);
 		}
 		catch(boost::bad_lexical_cast&)
 		{
-			printf("Width and height parameters needs to be numeric!");
-			printf("usage:\t./whitenoise");
-			printf("\t./whitenoise amountoffolders");
-			printf("\t./whitenoise amountoffolders width height");
-			return 1;
+			fprintf(stderr, "Width and height parameters needs to be numeric!");
+			die(1);
 		}
 	}
 
 	if(SDL_Init(SDL_INIT_EVERYTHING) == -1)
 		return -1;
-	surface = SDL_CreateRGBSurface(SDL_SWSURFACE, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP, 0xFF0000, 0x00FF00, 0x0000FF, 0);
+	surface = SDL_CreateRGBSurface(SDL_SWSURFACE, surfaceWidth, surfaceHeight, SCREEN_BPP, 0xFF0000, 0x00FF00, 0x0000FF, 0);
 	if (SDL_MUSTLOCK(surface))
 		SDL_LockSurface(surface);
 
 
 	mkdir("output",0755);
 	chdir("output");
-	for(i=0; i<FOLDER_NUMBER; i++)
+	for(i=0; i<folderNumber; i++)
 	{
 		sprintf(foldername,"%.3d",i);
 		mkdir(foldername,0755);
 		for(j=0; j<200; j++)
 		{
 			ptr = (Uint32 *)surface->pixels;
-			for(k=0; k<SCREEN_HEIGHT*surface->pitch/4; k++)
+			for(k=0; k<surfaceHeight*surface->pitch/4; k++)
 				ptr[k] = rand();
 			sprintf(filename,"%.3d/%.3d.bmp",i,j);
 			SDL_SaveBMP(surface, filename);

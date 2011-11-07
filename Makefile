@@ -11,3 +11,4 @@ $(BIN): $(SRC)
 
 clean:
 	rm $(BIN)
+	rm -r output
