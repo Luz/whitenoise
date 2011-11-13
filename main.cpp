@@ -15,7 +15,7 @@ void catcher(int sigtype);
 
 int main(int argc, char* args[])
 {
-	unsigned int surfaceWidth, surfaceHeight, folderNumber, i,j,k;
+	unsigned int surfaceWidth, surfaceHeight, folderNumber;
 	SDL_Surface *surface = NULL;
 	char foldername[32];
 	char filename[32];
@@ -39,7 +39,7 @@ int main(int argc, char* args[])
 		surfaceWidth = widthArg.getValue();
 		surfaceHeight = heightArg.getValue();
 		folderNumber = foldersArg.getValue();
-		}
+	}
 	catch (TCLAP::ArgException & e)
 	{
 		std::cerr << "I don't understand " << e.argId() << ".\n" << e.error() << std::endl;
@@ -52,17 +52,16 @@ int main(int argc, char* args[])
 	if (SDL_MUSTLOCK(surface))
 		SDL_LockSurface(surface);
 
-
 	mkdir("output",0755);
 	chdir("output");
-	for(i=0; i<folderNumber; i++)
+	for(unsigned int i=0; i<folderNumber; i++)
 	{
 		sprintf(foldername,"%.3d",i);
 		mkdir(foldername,0755);
-		for(j=0; j<200; j++)
+		for(unsigned int j=0; j<200; j++)
 		{
 			ptr = (Uint32 *)surface->pixels;
-			for(k=0; k<surfaceHeight*surface->pitch/4; k++)
+			for(unsigned int k=0; k<surfaceHeight*surface->pitch/4; k++)
 				ptr[k] = rand();
 			sprintf(filename,"%.3d/%.3d.bmp",i,j);
 			SDL_SaveBMP(surface, filename);
@@ -72,7 +71,6 @@ int main(int argc, char* args[])
 		if (beenden==1)
 			break;
 	}
-
 
 	if (SDL_MUSTLOCK(surface))
 		SDL_UnlockSurface(surface);
@@ -89,7 +87,7 @@ unsigned int generateSeed()
 	seedZ = time(0);
 
 	char * tmp;
-	int size = sizeof(int);
+	const int size = sizeof(int);
 	tmp = new char[size];
 
 	using namespace std;
@@ -117,5 +115,5 @@ unsigned int generateSeed()
 
 void catcher(int sigtype)
 {
-	  beenden=1;
+	beenden=1;
 }
