@@ -26,10 +26,10 @@ int main(int argc, char* args[])
 
 	try
 	{
-		TCLAP::CmdLine cmd("Lustige Programmbeschreibung", ' ', "0.1");
+		TCLAP::CmdLine cmd("Creates pictures with random content", ' ', "0.1");
 		TCLAP::ValueArg<unsigned int> widthArg("x", "width", "Width in pixels", false, 960, "unsigned int");
 		TCLAP::ValueArg<unsigned int> heightArg("y", "height", "Height in pixels", false, 960, "unsigned int");
-		TCLAP::ValueArg<unsigned int> foldersArg("n", "amount", "Amount of folder you'd like to fill", false, 1, "unsigned int");
+		TCLAP::ValueArg<unsigned int> foldersArg("n", "folders", "Number of folders you'd like to fill", false, 1, "unsigned int");
 
 		cmd.add(widthArg);
 		cmd.add(heightArg);
