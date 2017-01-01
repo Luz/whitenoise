@@ -2,7 +2,7 @@ CPP = g++
 BIN = whitenoise
 SRC = main.cpp
 LIBS = SDL_image
-CXXFLAGS = `pkg-config --cflags --libs $(LIBS)` -Wall
+CXXFLAGS = `pkg-config --cflags --libs $(LIBS)` -ljpeg -Wall
 
 all: $(BIN)
 

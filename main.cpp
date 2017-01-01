@@ -2,23 +2,28 @@
 #include "SDL/SDL_image.h"
 #include <string>
 #include <iostream>
+#include <vector>
 #include <fstream> //read the urandom and random device
 #include <time.h> //use the "second" as seed generator if the random devices do fail
 #include <sys/stat.h> //for create directory
 #include <signal.h> //for ctrl+c to abort
 #include <tclap/CmdLine.h>
+#include <jpeglib.h>
  
 int beenden = 0; //Program flow
 
 unsigned int generateSeed();
 void catcher(int sigtype);
+bool write_jpeg_file( char *filename, unsigned int width, unsigned int height, unsigned char* data );
 
 int main(int argc, char* args[])
 {
+	using namespace std;
 	unsigned int surfaceWidth, surfaceHeight, folderNumber;
 	SDL_Surface *surface = NULL;
 	char foldername[32];
 	char filename[32];
+	string compression;
 	Uint32 *ptr;
 
 	signal(SIGINT, catcher);
@@ -30,15 +35,22 @@ int main(int argc, char* args[])
 		TCLAP::ValueArg<unsigned int> widthArg("x", "width", "Width in pixels", false, 960, "unsigned int");
 		TCLAP::ValueArg<unsigned int> heightArg("y", "height", "Height in pixels", false, 960, "unsigned int");
 		TCLAP::ValueArg<unsigned int> foldersArg("n", "folders", "Number of folders you'd like to fill", false, 1, "unsigned int");
+		vector<string> compressionList;
+		compressionList.push_back("bmp");
+		compressionList.push_back("jpg");
+		TCLAP::ValuesConstraint<string> compressionMethods( compressionList );
+		TCLAP::ValueArg<string> compressionArg("c", "compression", "Type of compression to use", false, "bmp", &compressionMethods);
 
-		cmd.add(widthArg);
-		cmd.add(heightArg);
+		cmd.add(compressionArg);
 		cmd.add(foldersArg);
+		cmd.add(heightArg);
+		cmd.add(widthArg);
 
 		cmd.parse(argc, args);
 		surfaceWidth = widthArg.getValue();
 		surfaceHeight = heightArg.getValue();
 		folderNumber = foldersArg.getValue();
+		compression = compressionArg.getValue();
 	}
 	catch (TCLAP::ArgException & e)
 	{
@@ -63,8 +75,13 @@ int main(int argc, char* args[])
 			ptr = (Uint32 *)surface->pixels;
 			for(unsigned int k=0; k<surfaceHeight*surface->pitch/4; k++)
 				ptr[k] = rand();
-			sprintf(filename,"%.3d/%.3d.bmp",i,j);
-			SDL_SaveBMP(surface, filename);
+			
+			sprintf(filename,"%.3d/%.3d.%s",i,j,compression.c_str());
+			if(compression == "bmp")
+				SDL_SaveBMP(surface, filename);
+			else if(compression == "jpg")
+				write_jpeg_file( filename, surface->w, surface->h, (unsigned char*)surface->pixels);
+
 			if (beenden==1)
 				break;
 		}
@@ -117,3 +134,57 @@ void catcher(int sigtype)
 {
 	beenden=1;
 }
+
+/**
+* write_jpeg_file writes the raw image data stored in the data buffer
+* to a jpeg image with default compression and smoothing options in the file
+* specified by filename. Source: http://www.aaronmr.com/en/2010/03/test/
+*/
+bool write_jpeg_file( char *filename, unsigned int width, unsigned int height, unsigned char* data )
+{
+	int bytes_per_pixel = 3;
+	J_COLOR_SPACE color_space = JCS_RGB;
+	struct jpeg_compress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+
+	// this is a pointer to one row of image data
+	JSAMPROW row_pointer[1];
+	FILE *outfile = fopen( filename, "wb" );
+
+	if ( !outfile )
+	{
+		fprintf(stderr, "Error opening output jpeg file %s\n!", filename );
+		return false;
+	}
+	cinfo.err = jpeg_std_error( &jerr );
+	jpeg_create_compress(&cinfo);
+	jpeg_stdio_dest(&cinfo, outfile);
+
+	// Setting the parameters of the output file here
+	cinfo.image_width = width;
+	cinfo.image_height = height;
+	cinfo.input_components = bytes_per_pixel;
+	cinfo.in_color_space = color_space;
+	// default compression parameters, we shouldn't be worried about these
+
+	jpeg_set_defaults( &cinfo );
+	cinfo.num_components = 3;
+	//cinfo.data_precision = 4;
+	cinfo.dct_method = JDCT_FLOAT;
+	jpeg_set_quality(&cinfo, 15, TRUE);
+	// Now do the compression
+	jpeg_start_compress( &cinfo, TRUE );
+	// like reading a file, this time write one row at a time
+	while( cinfo.next_scanline < cinfo.image_height )
+	{
+		row_pointer[0] = &data[ cinfo.next_scanline * cinfo.image_width * cinfo.input_components];
+		jpeg_write_scanlines( &cinfo, row_pointer, 1 );
+	}
+	// similar to read file, clean up after we're done compressing
+	jpeg_finish_compress( &cinfo );
+	jpeg_destroy_compress( &cinfo );
+	fclose( outfile );
+	
+	return true;
+}
+
